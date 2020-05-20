@@ -217,7 +217,9 @@ class TetrisEnv(gym.Env):
         reward function
         """
         # TODO: change it to your own choice of rewards
-        return 0.0
+        
+        return self.cleared_current_turn
+        # return 0.0
 
     def get_actions(self):
         """
