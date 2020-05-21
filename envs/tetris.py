@@ -40,6 +40,12 @@ class TetrisState:
             self.turn,
             self.cleared
         )
+    
+    def f_3(self):
+        for r in len(self.field):
+            for c in len(self.field[0]):
+                
+        pass
 
 
 class TetrisEnv(gym.Env):
@@ -233,6 +239,7 @@ class TetrisEnv(gym.Env):
         set the field and the next piece
         """
         self.state = state.copy()
+
 
 
 if __name__ == "__main__":

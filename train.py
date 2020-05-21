@@ -8,7 +8,7 @@ num_features = 6
 # TODO: Variables to define
 c_c = 
 c_sigma = 
-mu_co
+mu_co = 
 c_co = 
 w = 
 
@@ -50,3 +50,4 @@ def CMA_ES(lamb, m, sigma, f, n):
     p_c_t = p_c_new 
     C_t = C_new
     
+
