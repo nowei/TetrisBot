@@ -5,12 +5,12 @@ import numpy as np
 env = gym.make('Tetris-v0')
 
 num_features = 6
-# TODO: Variables to define
-c_c = 
-c_sigma = 
-mu_co = 
-c_co = 
-w = 
+# TODO: Variables to define, look at physics paper
+# c_c = 
+# c_sigma = 
+# mu_co = 
+# c_co = 
+# w = 
 
 
 def CMA_ES(lamb, m, sigma, f, n):
@@ -49,5 +49,35 @@ def CMA_ES(lamb, m, sigma, f, n):
     sigma_t = sigma_new
     p_c_t = p_c_new 
     C_t = C_new
-    
 
+import pickle
+import json
+
+def save_params(filename, m_t, sigma_t, C_t, t, p_c_t, p_sigma_t):
+    m = {}
+    with open('./weights/{}'.format(filename), 'w') as f:
+        m['m_t'] = pickle.dumps(m_t, protocol=0)
+        m['sigma'] = sigma_t
+        m['C_t'] = pickle.dumps(C_t, protocol=0)
+        m['t'] = t 
+        m['p_c_t'] = pickle.dumps(p_c_t, protocol=0)
+        m['p_sigma_t'] = pickle.dumps(p_sigma_t, protocol=0)
+        f.write(json.dumps(m))
+
+def load_params(filename):
+    m = None
+    m_t = None 
+    sigma_t = None 
+    C_t = None 
+    t = None 
+    p_c_t = None 
+    p_sigma_t = None
+    with open('./weights/{}'.format(filename)) as f:
+        m = json.loads(f.read())
+        m_t = pickle.loads(m['m_t'])
+        sigma_t = float(m['sigma_t'])
+        C_t = pickle.loads(m['m'])
+        t = int(m['t'])
+        p_c_t = pickle.loads(m['p_c_t'])
+        p_sigma_t = pickle.loads(m['p_sigma_t'])
+    return m, m_t, sigma_t, C_t, t, p_c_t, p_sigma_t 
