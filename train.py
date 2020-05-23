@@ -6,7 +6,7 @@ from scipy.linalg import sqrtm
 import os 
 env = gym.make('Tetris-v0')
 
-filename = "curr_iter.txt"
+filename = "curr_iter_1.txt"
 
 import json
 import io
@@ -217,14 +217,14 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         print('conjugate evolution path')
         print(p_sigma_t)
 
-        save_params('curr_iter.txt', m_t, sigma_t, C_t, t, p_c_t, p_sigma_t)
+        save_params(filename, m_t, sigma_t, C_t, t, p_c_t, p_sigma_t)
         # m_t, sigma_t, C_t, t, p_c_t, p_sigma_t = load_params('curr_iter.txt')
     return m_t 
 
 def eval_child(child, env, episodes=5):
     total = 0
     for i in range(episodes):
-        total += env.get_reward_child(child)
+        total += env.get_reward_child(child, False)
     average = total / episodes
     print('cleared an average of {} lines'.format(average))
     return average
