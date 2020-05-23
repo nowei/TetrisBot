@@ -6,7 +6,7 @@ import numpy as np
 
 env = gym.make('Tetris-v0')
 env.reset()
-PATH = './weights/curr_iter.txt'
+PATH = './weights/test_iter.txt'
 
 def load_params(filename):
     print("loading params from {}".format(filename))
@@ -32,12 +32,17 @@ def load_params(filename):
         t = int(m['t'])
         p_c_t = load_np(m['p_c_t'])
         p_sigma_t = load_np(m['p_sigma_t'])
-        # print(m_t)
-        # print(sigma_t)
-        # print(C_t)
-        # print(t)
-        # print(p_c_t)
-        # print(p_sigma_t)
+        print('--------- generation {} ---------'.format(t))
+        print('mean')
+        print(m_t)
+        print('step size')
+        print(sigma_t)
+        print('Covariance matrix')
+        print(C_t)
+        print('evolution path')
+        print(p_c_t)
+        print('conjugate evolution path')
+        print(p_sigma_t)
     return m_t, sigma_t, C_t, t, p_c_t, p_sigma_t 
 
 candidate, _, _, _, _, _, = load_params(PATH)
@@ -57,4 +62,4 @@ while (not env.state.lost and env.state.cleared < 12500):
             best_state = env.state.copy()
         env.set_state(prev_state)
     env.set_state(best_state)
-print(env.state.cleared)
+print('cleared {} lines'.format(env.state.cleared))
