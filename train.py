@@ -184,10 +184,10 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         C_t = C_new
 
         save_params('curr_iter.txt', m_t, sigma_t, C_t, t, p_c_t, p_sigma_t)
-        m_t, sigma_t, C_t, t, p_c_t, p_sigma_t = load_params('curr_iter.txt')
+        # m_t, sigma_t, C_t, t, p_c_t, p_sigma_t = load_params('curr_iter.txt')
     return m_t 
 
-def eval_child(child, env, episodes=1):
+def eval_child(child, env, episodes=5):
     total = 0
     for i in range(episodes):
         total += env.get_reward_child(child)
