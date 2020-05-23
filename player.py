@@ -1,11 +1,15 @@
 import envs
 import gym
-import train 
+import io
+import json
+import numpy as np
+
 env = gym.make('Tetris-v0')
+env.reset()
 PATH = './weights/curr_iter.txt'
 
 def load_params(filename):
-    print("loading params from ./weights/{}".format(filename))
+    print("loading params from {}".format(filename))
     m = None
     m_t = None 
     sigma_t = None 
@@ -20,7 +24,7 @@ def load_params(filename):
         memfile.seek(0)
         return np.load(memfile)
 
-    with open('./weights/{}'.format(filename)) as f:
+    with open(filename) as f:
         m = json.loads(f.read())
         m_t = load_np(m['m_t'])
         sigma_t = float(m['sigma_t'])
@@ -36,4 +40,21 @@ def load_params(filename):
         # print(p_sigma_t)
     return m_t, sigma_t, C_t, t, p_c_t, p_sigma_t 
 
-m_t, _, _, _, _, _, = load_params(PATH)
+candidate, _, _, _, _, _, = load_params(PATH)
+
+while (not env.state.lost and env.state.cleared < 12500):
+    prev_state = env.state.copy()
+    best_val = -float("inf")
+    # best_action = None
+    # best_val_reward = None
+    best_state = None
+    for action in env.get_actions():
+        env.step(action)
+        val = np.dot(candidate, env.features)
+        if val > best_val:
+            best_val = val
+            # best_action = action
+            best_state = env.state.copy()
+        env.set_state(prev_state)
+    env.set_state(best_state)
+print(env.state.cleared)
