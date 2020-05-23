@@ -2,17 +2,40 @@ import envs
 import gym
 import math
 import numpy as np  
+np.set_printoptions(linewidth=200)
+
 from scipy.linalg import sqrtm
 import os 
+import configparser
+
+config = configparser.ConfigParser()
+config.read('settings.config')
+config = config['DEFAULT']
+
 env = gym.make('Tetris-v0')
 
-filename = "curr_iter.txt"
+filename = config['TRAIN_SAVE_PATH']
+
+# train on a 2/9 prob for S and Z
+hard = config.getboolean('hard')
+
+# train on a 3/11 prob for S and Z
+harder = config.getboolean('harder')
+
+multiprocess = config.getboolean('multiprocessing')
+
+num_episodes = int(config['num_episodes'])
+
+mean = np.array(eval(config['mean']))
+p_c = np.array(eval(config['p_c']))
+p_sigma = np.array(eval(config['p_sigma']))
+sigma = float(config['sigma'])
 
 import json
 import io
 
 def save_params(filename, m_t, sigma_t, C_t, t, p_c_t, p_sigma_t):
-    print("saving params to ./weights/{}".format(filename))
+    print("saving params to {}".format(filename))
     m = {}
 
     def write_np(a):
@@ -21,7 +44,7 @@ def save_params(filename, m_t, sigma_t, C_t, t, p_c_t, p_sigma_t):
         memfile.seek(0)
         return json.dumps(memfile.read().decode('latin-1'))
         
-    with open('./weights/{}'.format(filename), 'w') as f:
+    with open(filename, 'w') as f:
         # print(m_t)
         # print(sigma_t)
         # print(C_t)
@@ -42,7 +65,7 @@ num_features = 6
 # Parameters described in https://hal.inria.fr/inria-00276216/document
 
 def load_params(filename):
-    print("loading params from ./weights/{}".format(filename))
+    print("loading params from {}".format(filename))
     m = None
     m_t = None 
     sigma_t = None 
@@ -57,7 +80,7 @@ def load_params(filename):
         memfile.seek(0)
         return np.load(memfile)
 
-    with open('./weights/{}'.format(filename)) as f:
+    with open(filename) as f:
         m = json.loads(f.read())
         m_t = load_np(m['m_t'])
         sigma_t = float(m['sigma_t'])
@@ -78,8 +101,8 @@ def load_params(filename):
 # dimension of mean
 n = num_features # Not sure if right? (????)
 
-if os.path.exists("./weights/" + filename):
-    print('picking up from previous iteration')
+if os.path.exists(filename):
+    print('picking up from previous generation')
     mean, sigma, C, t, p_c, p_sigma = load_params(filename)
     print('--------- generation {} ---------'.format(t))
     print('mean')
@@ -96,27 +119,15 @@ if os.path.exists("./weights/" + filename):
     # TODO: Tune this when we have a good mean to choose from
     lamb = 4 + math.floor(3 * math.log(n))
 else:
-    # Number of children
+    print('starting new spawns')
+    # Number of children, as suggested in https://hal.inria.fr/inria-00276216/document
     lamb = 4 + math.floor(3 * math.log(n))
-
-    # initial mean value
-    # TODO: actually have values
-    mean = np.array([0, 0, 0, 0, 0, 0]) 
 
     # Covariance matrix
     C = np.eye(num_features)
 
-    # Generation number
+    # generation number
     t = 1
-
-    # evolution path
-    p_c = np.ones((n,))
-
-    # conjugate evolution path (to control step size)
-    p_sigma = np.ones((n,))
-
-    # Step size 
-    sigma = 0.1
     
     print('--------- generation {} ---------'.format(t))
     print('mean')
@@ -156,19 +167,24 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     c_c = 4 / (n + 4)
     mu_cov = mu_eff 
     c_cov = (1 / mu_cov) * (2 / (n + math.sqrt(2)) ** 2) + (1 - 1 / mu_cov) * min(1, (2 * mu_eff - 1)/((n + 2) ** 2 + mu_eff))
-    env = gym.make('Tetris-v0')
-    env.reset()
 
+    # create environment
+    if not multiprocess:
+        env = gym.make('Tetris-v0')
+        env.reset()
+    else:
+        envs = [gym.make('Tetris-v0') for i in range(lamb)]
+        for env in envs:
+            env.reset()
     while (True):
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
         X = m_t + sigma * Z
         performance = []
-        # create environment
         for i in range(lamb):
             child = X[i]
             # Eval(child)
-            # env.reset() # Done in 
-            performance.append(eval_child(child, env))
+            # env.reset() Done in tetris.py
+            performance.append(eval_child(child, env, num_episodes))
 
         # argsort Eval(X), reverse
         ordering = np.argsort(performance)[::-1]
@@ -217,7 +233,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         print('conjugate evolution path')
         print(p_sigma_t)
 
-        save_params('curr_iter.txt', m_t, sigma_t, C_t, t, p_c_t, p_sigma_t)
+        save_params(filename, m_t, sigma_t, C_t, t, p_c_t, p_sigma_t)
         # m_t, sigma_t, C_t, t, p_c_t, p_sigma_t = load_params('curr_iter.txt')
     return m_t 
 

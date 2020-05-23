@@ -267,9 +267,9 @@ class TetrisEnv(gym.Env):
         """
         self.state = state.copy()
 
-    def get_reward_child(self, child, hard=True):
+    def get_reward_child(self, child, hard=True, harder=False):
         # Create x = (# of valid Orientation, # of valid placements, 6)
-        while (not self.state.lost and self.state.cleared < 12500):
+        while (not self.state.lost):
             prev_state = self.state.copy()
             best_val = -float("inf")
             # best_action = None
@@ -285,14 +285,19 @@ class TetrisEnv(gym.Env):
                 self.set_state(prev_state)
             self.set_state(best_state)
             if hard:
-                self._set_hard_random_piece()
+                self._set_hard_random_piece(harder)
         cummu_reward = self.state.cleared
         self.reset()
         return cummu_reward
     
-    def _set_hard_random_piece(self):
+    def _set_hard_random_piece(self, harder=False):
         # pieces: O, I, L, J, T, S, Z
-        self.state.next_piece = np.random.choice(range(7), p=[1/9, 1/9, 1/9, 1/9, 1/9, 2/9, 2/9])
+        
+        if harder: # suggested in the paper
+            self.state.next_piece = np.random.choice(range(7), p=[1/11, 1/11, 1/11, 1/11, 1/11, 3/11, 3/11])
+            
+        else:      # slightly easier game
+            self.state.next_piece = np.random.choice(range(7), p=[1/9, 1/9, 1/9, 1/9, 1/9, 2/9, 2/9])
 
 
 if __name__ == "__main__":

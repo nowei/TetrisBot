@@ -3,10 +3,16 @@ import gym
 import io
 import json
 import numpy as np
+import configparser
+np.set_printoptions(linewidth=200)
+
+config = configparser.ConfigParser()
+config.read('settings.config')
+config = config['DEFAULT']
 
 env = gym.make('Tetris-v0')
 env.reset()
-PATH = './test_params/test_iter.txt'
+PATH = config['TEST_PATH']
 
 def load_params(filename):
     print("loading params from {}".format(filename))
