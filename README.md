@@ -28,7 +28,7 @@ Then you can simply run `train.py` and it will save weights.
 ### Training options
 * `hard` - enable training with hard mode (2/9 probability for S and Z)
 * `harder` - enable training with harder mode (3/11 probability for S and Z) (requires `hard` to be `true`)
-* `multiprocessing` - enabled multithreading of child environments `TODO`
+* `multiprocessing` - enable simple multithreading of child environments using multiprocessing.Pool, sends one child and environment to each pool worker
 * `num_episodes` - number of episodes to average performance of children across
 * `mean` - initial weighting of the 6 Dellacherie features
 * `p_c` - evolution path

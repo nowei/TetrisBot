@@ -23,6 +23,8 @@ hard = config.getboolean('hard')
 harder = config.getboolean('harder')
 
 multiprocess = config.getboolean('multiprocessing')
+if multiprocess: 
+    from multiprocessing import Pool
 
 num_episodes = int(config['num_episodes'])
 
@@ -169,23 +171,30 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     c_cov = (1 / mu_cov) * (2 / (n + math.sqrt(2)) ** 2) + (1 - 1 / mu_cov) * min(1, (2 * mu_eff - 1)/((n + 2) ** 2 + mu_eff))
 
     # create environment
+    print('creating environment')
     if not multiprocess:
         env = gym.make('Tetris-v0')
         env.reset()
     else:
+        print('attempting multiprocessing, cpu_count = {}'.format(os.cpu_count()))
         envs = [gym.make('Tetris-v0') for i in range(lamb)]
         for env in envs:
             env.reset()
+
     while (True):
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
         X = m_t + sigma * Z
         performance = []
-        for i in range(lamb):
-            child = X[i]
-            # Eval(child)
-            # env.reset() Done in tetris.py
-            performance.append(eval_child(child, env, num_episodes))
-
+        if not multiprocess:
+            for i in range(lamb):
+                child = X[i]
+                # Eval(child)
+                # env.reset() Done in tetris.py
+                performance.append(eval_child(child, env, num_episodes))
+        else:
+            with Pool(processes=4) as pool:
+                performance = pool.starmap(eval_child, [(X[i], envs[i], num_episodes) for i in range(lamb)])
+            print(performance)
         # argsort Eval(X), reverse
         ordering = np.argsort(performance)[::-1]
         
@@ -209,6 +218,8 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         h_sigma = 1 if np.linalg.norm(p_sigma_t) > (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1))) else 0
 
         p_sigma_new = (1 - c_sigma) * p_sigma_t + h_sigma * math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
+        # print(c_sigma, h_sigma)
+        # print('old sigma {}, new sigma {}'.format(p_sigma_t, p_sigma_new))
         sigma_new = sigma_t * math.exp(c_sigma / d_sigma * (np.linalg.norm(p_sigma_new)/ (expected_norm_normal - 1)))
         p_c_new = (1 - c_c) * p_c_t + math.sqrt(c_c * (2 - c_c) * mu_eff) * (Y_ranked)
         C_new = (1 - c_cov) * C_t + c_cov/mu_cov * np.outer(p_c_new, p_c_new) + c_cov * (1 - 1 / mu_cov) * (Y_selected * w[:, np.newaxis]).T.dot(Y_selected)
