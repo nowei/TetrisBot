@@ -35,3 +35,5 @@ def load_params(filename):
         # print(p_c_t)
         # print(p_sigma_t)
     return m_t, sigma_t, C_t, t, p_c_t, p_sigma_t 
+
+m_t, _, _, _, _, _, = load_params(PATH)

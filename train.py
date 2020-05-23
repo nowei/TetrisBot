@@ -136,7 +136,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     env = gym.make('Tetris-v0')
     env.reset()
 
-    while (t < 10):
+    while (True):
         print("t = {}".format(t))
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
         X = m_t + sigma * Z
