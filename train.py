@@ -113,7 +113,7 @@ if os.path.exists(filename):
     print(sigma)
     print('Covariance matrix')
     print(C)
-    print('evolution path')
+    print('covariance evolution path')
     print(p_c)
     print('conjugate evolution path')
     print(p_sigma)
@@ -138,7 +138,7 @@ else:
     print(sigma)
     print('Covariance matrix')
     print(C)
-    print('evolution path')
+    print('covariance evolution path')
     print(p_c)
     print('conjugate evolution path')
     print(p_sigma)
@@ -163,7 +163,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     # c_cov on page 6
 
     w = np.array([(math.log(mu + 1) - math.log(i)) / (mu * math.log(mu + 1) - sum([math.log(j) for j in range(1, mu + 1)])) for i in range(1, mu + 1)])
-    mu_eff = 1 / (np.linalg.norm(w) ** 2)
+    mu_eff = 1 / (np.sum(w * w))
     c_sigma = (mu_eff + 2) / (n + mu_eff + 3)
     d_sigma = 1 + 2 * max(0, math.sqrt((mu_eff - 1)/(n + 1)) - 1) + c_sigma
     c_c = 4 / (n + 4)
@@ -215,9 +215,13 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         # According to: https://en.wikipedia.org/wiki/CMA-ES#Algorithm and https://hal.inria.fr/inria-00276216/document (page 6)
         # E[||N(0, I)||] \approx sqrt(n) * (1 - 1 / (4n) + 1 / (21 * n^2))
         expected_norm_normal = math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n))
-        h_sigma = 1 if np.linalg.norm(p_sigma_t) > (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1))) else 0
+        covar_evol_path_calc = (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1)))
+        print("covar path update", np.linalg.norm(p_sigma_t), covar_evol_path_calc)
+        h_sigma = 1 if np.linalg.norm(p_sigma_t) > covar_evol_path_calc else 0
 
         p_sigma_new = (1 - c_sigma) * p_sigma_t + math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
+        print(math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked))
+        print(p_sigma_new)
         sigma_new = sigma_t * math.exp((c_sigma / d_sigma) * ((np.linalg.norm(p_sigma_new)/ expected_norm_normal) - 1))
         p_c_new = (1 - c_c) * p_c_t + h_sigma * math.sqrt(c_c * (2 - c_c) * mu_eff) * (Y_ranked)
         C_new = (1 - c_cov) * C_t + c_cov/mu_cov * np.outer(p_c_new, p_c_new) + c_cov * (1 - 1 / mu_cov) * (Y_selected * w[:, np.newaxis]).T.dot(Y_selected)
@@ -237,7 +241,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         print(sigma_t)
         print('Covariance matrix')
         print(C_t)
-        print('evolution path')
+        print('covariance evolution path')
         print(p_c_t)
         print('conjugate evolution path')
         print(p_sigma_t)

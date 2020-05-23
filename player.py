@@ -45,7 +45,7 @@ def load_params(filename):
         print(sigma_t)
         print('Covariance matrix')
         print(C_t)
-        print('evolution path')
+        print('covariance evolution path')
         print(p_c_t)
         print('conjugate evolution path')
         print(p_sigma_t)
