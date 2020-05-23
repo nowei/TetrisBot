@@ -81,6 +81,17 @@ n = num_features # Not sure if right? (????)
 if os.path.exists("./weights/" + filename):
     print('picking up from previous iteration')
     mean, sigma, C, t, p_c, p_sigma = load_params(filename)
+    print('--------- generation {} ---------'.format(t))
+    print('mean')
+    print(mean)
+    print('step size')
+    print(sigma)
+    print('Covariance matrix')
+    print(C)
+    print('evolution path')
+    print(p_c)
+    print('conjugate evolution path')
+    print(p_sigma)
 
     # TODO: Tune this when we have a good mean to choose from
     lamb = 4 + math.floor(3 * math.log(n))
@@ -106,11 +117,23 @@ else:
 
     # Step size 
     sigma = 0.1
+    
+    print('--------- generation {} ---------'.format(t))
+    print('mean')
+    print(mean)
+    print('step size')
+    print(sigma)
+    print('Covariance matrix')
+    print(C)
+    print('evolution path')
+    print(p_c)
+    print('conjugate evolution path')
+    print(p_sigma)
 
 def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     mu = math.floor(lamb / 2)
     m_t = m 
-    sigma_t = sigma             # 
+    sigma_t = sigma             # step size
     C_t = C                     # Covariance
     t = t                       # generation counter
     p_c_t = p_c
@@ -137,7 +160,6 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     env.reset()
 
     while (True):
-        print("t = {}".format(t))
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
         X = m_t + sigma * Z
         performance = []
@@ -168,7 +190,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         # According to: https://en.wikipedia.org/wiki/CMA-ES#Algorithm and https://hal.inria.fr/inria-00276216/document (page 6)
         # E[||N(0, I)||] \approx sqrt(n) * (1 - 1 / (4n) + 1 / (21 * n^2))
         expected_norm_normal = math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n))
-        h_sigma = 0 if np.linalg.norm(p_sigma_t) > (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1))) else 1
+        h_sigma = 1 if np.linalg.norm(p_sigma_t) > (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1))) else 0
 
         p_sigma_new = (1 - c_sigma) * p_sigma_t + h_sigma * math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
         sigma_new = sigma_t * math.exp(c_sigma / d_sigma * (np.linalg.norm(p_sigma_new)/ (expected_norm_normal - 1)))
@@ -182,6 +204,18 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         sigma_t = sigma_new
         p_c_t = p_c_new 
         C_t = C_new
+
+        print('--------- generation {} ---------'.format(t))
+        print('mean')
+        print(m_t)
+        print('step size')
+        print(sigma_t)
+        print('Covariance matrix')
+        print(C_t)
+        print('evolution path')
+        print(p_c_t)
+        print('conjugate evolution path')
+        print(p_sigma_t)
 
         save_params('curr_iter.txt', m_t, sigma_t, C_t, t, p_c_t, p_sigma_t)
         # m_t, sigma_t, C_t, t, p_c_t, p_sigma_t = load_params('curr_iter.txt')
