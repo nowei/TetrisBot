@@ -168,7 +168,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     d_sigma = 1 + 2 * max(0, math.sqrt((mu_eff - 1)/(n + 1)) - 1) + c_sigma
     c_c = 4 / (n + 4)
     mu_cov = mu_eff 
-    c_cov = (1 / mu_cov) * (2 / (n + math.sqrt(2)) ** 2) + (1 - 1 / mu_cov) * min(1, (2 * mu_eff - 1)/((n + 2) ** 2 + mu_eff))
+    c_cov = (1 / mu_cov) * (2 / (n + math.sqrt(2)) ** 2) + (1 - 1 / mu_cov) * min(1, (2 * mu_eff - 1)/(((n + 2) ** 2) + mu_eff))
 
     # create environment
     print('creating environment')
@@ -217,11 +217,9 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         expected_norm_normal = math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n))
         h_sigma = 1 if np.linalg.norm(p_sigma_t) > (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1))) else 0
 
-        p_sigma_new = (1 - c_sigma) * p_sigma_t + h_sigma * math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
-        # print(c_sigma, h_sigma)
-        # print('old sigma {}, new sigma {}'.format(p_sigma_t, p_sigma_new))
-        sigma_new = sigma_t * math.exp(c_sigma / d_sigma * (np.linalg.norm(p_sigma_new)/ (expected_norm_normal - 1)))
-        p_c_new = (1 - c_c) * p_c_t + math.sqrt(c_c * (2 - c_c) * mu_eff) * (Y_ranked)
+        p_sigma_new = (1 - c_sigma) * p_sigma_t + math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
+        sigma_new = sigma_t * math.exp((c_sigma / d_sigma) * ((np.linalg.norm(p_sigma_new)/ expected_norm_normal) - 1))
+        p_c_new = (1 - c_c) * p_c_t + h_sigma * math.sqrt(c_c * (2 - c_c) * mu_eff) * (Y_ranked)
         C_new = (1 - c_cov) * C_t + c_cov/mu_cov * np.outer(p_c_new, p_c_new) + c_cov * (1 - 1 / mu_cov) * (Y_selected * w[:, np.newaxis]).T.dot(Y_selected)
         
         # Update variables
