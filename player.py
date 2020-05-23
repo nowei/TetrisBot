@@ -6,7 +6,7 @@ import numpy as np
 
 env = gym.make('Tetris-v0')
 env.reset()
-PATH = './weights/test_iter.txt'
+PATH = './weights/curr_iter.txt'
 
 def load_params(filename):
     print("loading params from {}".format(filename))
