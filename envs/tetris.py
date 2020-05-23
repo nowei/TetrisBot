@@ -17,7 +17,7 @@ class TetrisState:
     """
     the tetris state
     """
-    def __init__(self, field, top, next_piece, lost, turn, cleared):
+    def __init__(self, field, top, next_piece, lost, turn, cleared, features=None):
         # the board configuration
         self.field = field
         # the top position
@@ -30,6 +30,8 @@ class TetrisState:
         self.turn = turn
         # the number of rows cleared so far
         self.cleared = cleared
+        # last feature object
+        self.features = features
 
     def copy(self):
         return TetrisState(
@@ -38,15 +40,9 @@ class TetrisState:
             self.next_piece,
             self.lost,
             self.turn,
-            self.cleared
+            self.cleared,
+            self.features
         )
-    
-    def f_3(self):
-        for r in len(self.field):
-            for c in len(self.field[0]):
-                
-        pass
-
 
 class TetrisEnv(gym.Env):
     metadata = {
@@ -123,6 +119,8 @@ class TetrisEnv(gym.Env):
         """
         make a move based on the orientation and slot
         """
+        self.features = np.zeros((6,))
+
         orient, slot = action
         self.state.turn += 1
 
@@ -131,6 +129,8 @@ class TetrisEnv(gym.Env):
             self.state.top[slot+c] - self.piece_bottom[self.state.next_piece][orient][c]
             for c in range(self.piece_width[self.state.next_piece][orient])
         )
+
+        self.features[0] = height
 
         # check if game ended
         if height + self.piece_height[self.state.next_piece][orient] >= self.n_rows:
@@ -156,6 +156,7 @@ class TetrisEnv(gym.Env):
                 self.state.cleared += 1
                 # for each column
                 for c in range(self.n_cols):
+                    self.features[1] += (1 if self.state.field[r, c] == self.state.turn else 0)
                     # slide down all bricks
                     self.state.field[r:self.state.top[c], c] = self.state.field[(r+1):(self.state.top[c]+1), c]
                     # lower the top
@@ -163,6 +164,33 @@ class TetrisEnv(gym.Env):
                     while self.state.top[c] >= 1 and self.state.field[self.state.top[c]-1, c] == 0:
                         self.state.top[c] -= 1
 
+        self.features[1] *= self.cleared_current_turn
+
+        # Feature 3
+        for r_top in self.state.top:
+            for r in range(r_top):
+                filled = True
+                for c in range(self.n_cols):
+                    if (filled and self.state.field[r, c] == 0) or (not filled and self.state.field[r, c] > 0):
+                        filled = not filled
+                        self.features[2] += 1
+                if not filled: 
+                    self.features[2] += 1
+    
+        # Feature 4,5,6
+        for c in range(self.n_cols):
+            filled = True
+            well = 0
+            for r in range(self.state.top[c]):
+                if (filled and self.state.field[r, c] == 0) or (not filled and self.state.field[r, c] > 0):
+                   filled = not filled
+                   self.features[3] += 1
+                   well = 0
+                if self.state.field[r, c] == 0 and (c - 1 < 0 or self.state.field[r, c] > 0) and (c + 1 == self.n_cols or self.state.field[r, c + 1] > 0):
+                    well += 1
+            self.features[4] += self.features[3] // 2
+            self.features[5] += (well * (well + 1)) // 2
+        
         # pick a new piece
         self.state.next_piece = self._get_random_piece()
         return self.state.copy(), self._get_reward(), False, {}
@@ -223,7 +251,6 @@ class TetrisEnv(gym.Env):
         reward function
         """
         # TODO: change it to your own choice of rewards
-        
         return self.cleared_current_turn
         # return 0.0
 
@@ -240,6 +267,29 @@ class TetrisEnv(gym.Env):
         """
         self.state = state.copy()
 
+    def get_reward_child(self, child):
+        # Create x = (# of valid Orientation, # of valid placements, 6)
+        while (not self.state.lost and self.state.cleared < 12500):
+            prev_state = self.state.copy()
+            best_val = -float("inf")
+            # best_action = None
+            # best_val_reward = None
+            best_state = None
+            for action in self.get_actions():
+                self.step(action)
+                val = np.dot(child, self.features)
+                if val > best_val:
+                    best_val = val
+                    # best_action = action
+                    best_state = self.state.copy()
+                self.set_state(prev_state)
+            self.set_state(best_state)
+        cummu_reward = self.state.cleared
+        self.reset()
+        return cummu_reward
+    
+    def _set_hard_random_piece(self):
+        pass
 
 
 if __name__ == "__main__":
