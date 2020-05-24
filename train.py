@@ -181,9 +181,9 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         env.reset()
     else:
         print('attempting multiprocessing, cpu_count = {}'.format(os.cpu_count()))
-        envs = [gym.make('Tetris-v0') for i in range(lamb)]
+        envs = [[None, gym.make('Tetris-v0'), num_episodes] for i in range(lamb)]
         for env in envs:
-            env.reset()
+            env[1].reset()
 
     while (True):
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
@@ -196,8 +196,10 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
                 # env.reset() Done in tetris.py
                 performance.append(eval_child(child, env, num_episodes))
         else:
+            for i in range(lamb):
+                envs[i][0] = X[i]
             with Pool(processes=4) as pool:
-                performance = pool.starmap(eval_child, [(X[i], envs[i], num_episodes) for i in range(lamb)])
+                performance = pool.starmap(eval_child, envs)
             print(performance)
         # argsort Eval(X), reverse
         ordering = np.argsort(performance)[::-1]
@@ -220,12 +222,12 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         # E[||N(0, I)||] \approx sqrt(n) * (1 - 1 / (4n) + 1 / (21 * n^2))
         expected_norm_normal = math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n))
         covar_evol_path_calc = (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1)))
-        print("covar path update", np.linalg.norm(p_sigma_t), covar_evol_path_calc)
+        # print("covar path update", np.linalg.norm(p_sigma_t), covar_evol_path_calc)
         h_sigma = 1 if np.linalg.norm(p_sigma_t) > covar_evol_path_calc else 0
 
         p_sigma_new = (1 - c_sigma) * p_sigma_t + math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
-        print(math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked))
-        print(p_sigma_new)
+        # print(math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked))
+        # print(p_sigma_new)
         sigma_new = sigma_t * math.exp((c_sigma / d_sigma) * ((np.linalg.norm(p_sigma_new)/ expected_norm_normal) - 1))
         p_c_new = (1 - c_c) * p_c_t + h_sigma * math.sqrt(c_c * (2 - c_c) * mu_eff) * (Y_ranked)
         C_new = (1 - c_cov) * C_t + c_cov/mu_cov * np.outer(p_c_new, p_c_new) + c_cov * (1 - 1 / mu_cov) * (Y_selected * w[:, np.newaxis]).T.dot(Y_selected)
