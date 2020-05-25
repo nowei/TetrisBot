@@ -53,6 +53,9 @@ def load_params(filename):
 
 candidate, _, _, _, _, _, = load_params(PATH)
 
+# candidate = np.array([-0.29823464, -0.17747997, -0.06795371, -0.61199135, -0.0453651, 0.3328679])
+# print('trying {}'.format(candidate))
+
 while (not env.state.lost and env.state.cleared < 12500):
     prev_state = env.state.copy()
     best_val = -float("inf")

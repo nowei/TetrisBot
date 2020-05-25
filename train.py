@@ -22,6 +22,9 @@ hard = config.getboolean('hard')
 # train on a 3/11 prob for S and Z
 harder = config.getboolean('harder')
 
+# algorithm as in physics paper
+physics = config.getboolean('physics')
+
 multiprocess = config.getboolean('multiprocessing')
 if multiprocess: 
     from multiprocessing import Pool
@@ -163,6 +166,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     # c_cov on page 6
 
     w = np.array([(math.log(mu + 1) - math.log(i)) / (mu * math.log(mu + 1) - sum([math.log(j) for j in range(1, mu + 1)])) for i in range(1, mu + 1)])
+    # print(w)
     mu_eff = 1 / (np.sum(w * w))
     c_sigma = (mu_eff + 2) / (n + mu_eff + 3)
     d_sigma = 1 + 2 * max(0, math.sqrt((mu_eff - 1)/(n + 1)) - 1) + c_sigma
@@ -180,6 +184,9 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         envs = [[None, gym.make('Tetris-v0'), num_episodes] for i in range(lamb)]
         for env in envs:
             env[1].reset()
+
+    # Calculate expected N(0, I) vector norm
+    expected_norm_normal = math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n))
 
     while (True):
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
@@ -216,17 +223,23 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         # E[||N(0,I)||^2] = trace(covariance)
         # According to: https://en.wikipedia.org/wiki/CMA-ES#Algorithm and https://hal.inria.fr/inria-00276216/document (page 6)
         # E[||N(0, I)||] \approx sqrt(n) * (1 - 1 / (4n) + 1 / (21 * n^2))
-        expected_norm_normal = math.sqrt(n) * (1 - 1 / (4 * n) + 1 / (21 * n * n))
-        covar_evol_path_calc = (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1)))
-        # print("covar path update", np.linalg.norm(p_sigma_t), covar_evol_path_calc)
-        h_sigma = 1 if np.linalg.norm(p_sigma_t) > covar_evol_path_calc else 0
+        if physics:
+            covar_evol_path_calc = (1.5 + 1 / (n - 0.5)) * expected_norm_normal * math.sqrt(1 - (1 - c_sigma) ** (2 * (t + 1)))
+            h_sigma = 1 if np.linalg.norm(p_sigma_t) > covar_evol_path_calc else 0
+            print("covar path update", np.linalg.norm(p_sigma_t), covar_evol_path_calc, h_sigma)
 
-        p_sigma_new = (1 - c_sigma) * p_sigma_t + math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
-        # print(math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked))
-        # print(p_sigma_new)
-        sigma_new = sigma_t * math.exp((c_sigma / d_sigma) * ((np.linalg.norm(p_sigma_new)/ expected_norm_normal) - 1))
-        p_c_new = (1 - c_c) * p_c_t + h_sigma * math.sqrt(c_c * (2 - c_c) * mu_eff) * (Y_ranked)
-        C_new = (1 - c_cov) * C_t + c_cov/mu_cov * np.outer(p_c_new, p_c_new) + c_cov * (1 - 1 / mu_cov) * (Y_selected * w[:, np.newaxis]).T.dot(Y_selected)
+        if physics:
+            # Physics paper
+            p_sigma_new = (1 - c_sigma) * p_sigma_t + math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(np.linalg.inv(C_t))).dot(Y_ranked)
+            sigma_new = sigma_t * math.exp((c_sigma / d_sigma) * ((np.linalg.norm(p_sigma_new)/ expected_norm_normal) - 1))
+            p_c_new = (1 - c_c) * p_c_t + h_sigma * math.sqrt(c_c * (2 - c_c) * mu_eff) * (Y_ranked)
+            C_new = (1 - c_cov) * C_t + c_cov/mu_cov * np.outer(p_c_new, p_c_new) + c_cov * (1 - 1 / mu_cov) * (Y_selected * w[:, np.newaxis]).T.dot(Y_selected)
+        else:
+            # Tetris paper
+            p_sigma_new = (1 - c_sigma) * p_sigma_t + math.sqrt(c_sigma * (2 - c_sigma) * mu_eff) * (sqrtm(C_t)).dot((m_new - m_t)/sigma_t)
+            sigma_new = sigma_t * math.exp((c_sigma / d_sigma) * ((np.linalg.norm(p_sigma_new)/ expected_norm_normal) - 1))
+            p_c_new = (1 - c_c) * p_c_t + math.sqrt(c_c * (2 - c_c) * mu_cov) * ((m_new - m_t)/sigma_t)
+            C_new = (1 - c_cov) * C_t + c_cov/mu_cov * np.outer(p_c_new, p_c_new) + c_cov * (1 - 1 / mu_cov) * (Y_selected * w[:, np.newaxis]).T.dot(Y_selected)
         
         # Update variables
         t = t + 1
@@ -256,6 +269,7 @@ def eval_child(child, env, episodes=5):
     total = 0
     for i in range(episodes):
         total += env.get_reward_child(child)
+        print(i, end='\r')
     average = total / episodes
     print('cleared an average of {} lines'.format(average))
     return average
