@@ -181,14 +181,16 @@ class TetrisEnv(gym.Env):
         for c in range(self.n_cols):
             filled = True
             well = 0
+            f_3_tmp = 0
             for r in range(self.state.top[c]):
                 if (filled and self.state.field[r, c] == 0) or (not filled and self.state.field[r, c] > 0):
-                   filled = not filled
-                   self.features[3] += 1
+                   filled = not filled 
+                   f_3_tmp += 1
                    well = 0
                 if self.state.field[r, c] == 0 and (c - 1 < 0 or self.state.field[r, c] > 0) and (c + 1 == self.n_cols or self.state.field[r, c + 1] > 0):
                     well += 1
-            self.features[4] += self.features[3] // 2
+            self.features[3] += f_3_tmp
+            self.features[4] += f_3_tmp // 2
             self.features[5] += (well * (well + 1)) // 2
         
         # pick a new piece
