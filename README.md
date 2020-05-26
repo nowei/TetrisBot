@@ -16,6 +16,7 @@ mean = [0, 0, 0, 0, 0, 0]
 p_c = [0, 0, 0, 0, 0, 0]
 p_sigma = [0, 0, 0, 0, 0, 0]
 sigma = 0.1
+physics = false
 ```
 
 Then you can simply run `train.py` and it will save weights.
@@ -34,5 +35,5 @@ Then you can simply run `train.py` and it will save weights.
 * `p_c` - evolution path
 * `p_sigma` - conjugate evolution path
 * `sigma` - step size (gets adaptively tuned by CMA-ES algorithm)
-
+* `phsyics` - based on the pysics paper with more details on parameters https://hal.inria.fr/inria-00276216/document
 
