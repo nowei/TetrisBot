@@ -10,8 +10,6 @@ config = configparser.ConfigParser()
 config.read('settings.config')
 config = config['DEFAULT']
 
-env = gym.make('Tetris-v0')
-env.reset()
 PATH = config['TEST_PATH']
 
 def load_params(filename):
@@ -60,6 +58,8 @@ num_evals = 100
 total = 0
 
 for i in range(num_evals):
+    env = gym.make('Tetris-v0')
+    env.reset()
     while (not env.state.lost and env.state.cleared < 12500):
         prev_state = env.state.copy()
         best_val = -float("inf")
@@ -76,5 +76,6 @@ for i in range(num_evals):
             env.set_state(prev_state)
         env.set_state(best_state)
     print('cleared {} lines'.format(env.state.cleared))
+    total += env.state.cleared
 print()
 print('average number of cleared lines: {}'.format(total / num_evals))
