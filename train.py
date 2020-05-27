@@ -273,7 +273,8 @@ def eval_child(child, env, episodes=5):
     total = 0
     for i in range(episodes):
         total += env.get_reward_child(child)
-        print(i, end='\r')
+        if not multiprocess:
+            print(i, end='\r')
     average = total / episodes
     print('cleared an average of {} lines'.format(average))
     return average
