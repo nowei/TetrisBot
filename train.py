@@ -272,7 +272,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
 def eval_child(child, env, episodes=5):
     total = 0
     for i in range(episodes):
-        total += env.get_reward_child(child)
+        total += env.get_reward_child(child, hard, harder)
         if not multiprocess:
             print(i, end='\r')
     average = total / episodes
