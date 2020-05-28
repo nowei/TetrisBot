@@ -8,6 +8,8 @@ from scipy.linalg import sqrtm
 import os 
 import configparser
 
+from random import randint
+
 config = configparser.ConfigParser()
 config.read('settings.config')
 config = config['DEFAULT']
@@ -150,6 +152,8 @@ else:
     print('conjugate evolution path')
     print(p_sigma)
 
+seeds = [0 for i in range(num_episodes)]
+
 def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     mu = math.floor(lamb / 2)
     m_t = m 
@@ -195,7 +199,12 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     while (True):
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
         X = m_t + sigma_t * Z
+        sum_rows = np.sum(X * X, axis=1) 
+        X = X / sum_rows[:, np.newaxis]
         performance = []
+
+        for i in range(num_episodes):
+            seeds[i] = randint(0, 2000000000)
         if not multiprocess:
             for i in range(lamb):
                 child = X[i]
@@ -216,7 +225,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         Z_sorted = Z[ordering] 
 
         # Linear combine top \mu X with w
-        m_new = np.sum(X_sorted[:mu] * w[:, np.newaxis], axis=0)
+        m_new = np.sum(X_sorted[:mu] * w[:, np.newaxis], axis=0) 
 
         # dim = mu x n
         Y_selected = Z_sorted[:mu]
@@ -272,6 +281,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
 def eval_child(child, env, episodes=5):
     total = 0
     for i in range(episodes):
+        env.seed(seeds[i])
         total += env.get_reward_child(child, hard, harder)
         if not multiprocess:
             print(i, end='\r')
