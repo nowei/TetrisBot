@@ -194,7 +194,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
 
     while (True):
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
-        X = m_t + sigma * Z
+        X = m_t + sigma_t * Z
         performance = []
         if not multiprocess:
             for i in range(lamb):
@@ -205,7 +205,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         else:
             for i in range(lamb):
                 envs[i][0] = X[i]
-            with Pool(processes=cpu_count()) as pool:
+            with Pool(processes=min(cpu_count(), lamb)) as pool:
                 performance = pool.starmap(eval_child, envs)
             print(performance)
         # argsort Eval(X), reverse
