@@ -294,12 +294,11 @@ class TetrisEnv(gym.Env):
     
     def _set_hard_random_piece(self, harder=False):
         # pieces: O, I, L, J, T, S, Z
-        
         if harder: # suggested in the paper
-            self.state.next_piece = np.random.choice(range(7), p=[1/11, 1/11, 1/11, 1/11, 1/11, 3/11, 3/11])
+            self.state.next_piece = self.np_random.choice(range(7), p=[1/11, 1/11, 1/11, 1/11, 1/11, 3/11, 3/11])
             
         else:      # slightly easier game
-            self.state.next_piece = np.random.choice(range(7), p=[1/9, 1/9, 1/9, 1/9, 1/9, 2/9, 2/9])
+            self.state.next_piece = self.np_random.choice(range(7), p=[1/9, 1/9, 1/9, 1/9, 1/9, 2/9, 2/9])
 
 
 if __name__ == "__main__":
