@@ -60,7 +60,7 @@ total = 0
 for i in range(num_evals):
     env = gym.make('Tetris-v0')
     env.reset()
-    while (not env.state.lost and env.state.cleared < 12500):
+    while (not env.state.lost):
         prev_state = env.state.copy()
         best_val = -float("inf")
         # best_action = None
