@@ -54,12 +54,11 @@ candidate, _, _, _, _, _, = load_params(PATH)
 # candidate = np.array([-0.29823464, -0.17747997, -0.06795371, -0.61199135, -0.0453651, 0.3328679])
 # print('trying {}'.format(candidate))
 
-num_evals = 100
+num_evals = 3
 total = 0
-
+env = gym.make('Tetris-v0')
+env.reset()
 for i in range(num_evals):
-    env = gym.make('Tetris-v0')
-    env.reset()
     while (not env.state.lost and env.state.cleared < 12500):
         prev_state = env.state.copy()
         best_val = -float("inf")
@@ -77,5 +76,6 @@ for i in range(num_evals):
         env.set_state(best_state)
     print('cleared {} lines'.format(env.state.cleared))
     total += env.state.cleared
+    env.reset()
 print()
 print('average number of cleared lines: {}'.format(total / num_evals))

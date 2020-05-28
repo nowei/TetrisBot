@@ -185,7 +185,7 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
         env.reset()
     else:
         print('attempting multiprocessing, cpu_count = {}'.format(os.cpu_count()))
-        envs = [[None, gym.make('Tetris-v0'), num_episodes] for i in range(lamb)]
+        envs = [[None, gym.make('Tetris-v0'), 1] for i in range(num_episodes)]
         for env in envs:
             env[1].reset()
 
@@ -204,9 +204,10 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
                 performance.append(eval_child(child, env, num_episodes))
         else:
             for i in range(lamb):
-                envs[i][0] = X[i]
-            with Pool(processes=cpu_count()) as pool:
-                performance = pool.starmap(eval_child, envs)
+                child = X[i]
+                for j in range(num_episodes):
+                    envs[j][0] = child
+                performance.append(eval_child_multiprocess(envs))
             print(performance)
         # argsort Eval(X), reverse
         ordering = np.argsort(performance)[::-1]
@@ -275,8 +276,21 @@ def eval_child(child, env, episodes=5):
         total += env.get_reward_child(child, hard, harder)
         if not multiprocess:
             print(i, end='\r')
+
     average = total / episodes
+
+    if not multiprocess:
+        print('cleared an average of {} lines'.format(average))
+
+    return average
+
+def eval_child_multiprocess(envs):
+    with Pool(os.cpu_count()) as pool:
+        performance = pool.starmap(eval_child, envs)
+
+    average = sum(performance) / num_episodes
     print('cleared an average of {} lines'.format(average))
+
     return average
 
 if __name__ == "__main__":
