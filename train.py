@@ -199,8 +199,8 @@ def CMA_ES(lamb, m, sigma, C, t, p_c, p_sigma):
     while (True):
         Z = np.random.multivariate_normal(np.zeros(n), C_t, (lamb))
         X = m_t + sigma_t * Z
-        sum_rows = np.sum(X * X, axis=1) 
-        X = X / sum_rows[:, np.newaxis]
+        # sum_rows = np.sum(X * X, axis=1) 
+        # X = X / sum_rows[:, np.newaxis]
         performance = []
 
         for i in range(num_episodes):
