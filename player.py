@@ -6,11 +6,14 @@ import numpy as np
 import configparser
 np.set_printoptions(linewidth=200)
 
-config = configparser.ConfigParser()
-config.read('settings.config')
-config = config['DEFAULT']
+# While training: 
+# config = configparser.ConfigParser()
+# config.read('settings.config')
+# config = config['DEFAULT']
+# PATH = config['TEST_PATH']
 
-PATH = config['TEST_PATH']
+# Turning in
+PATH = "weights/curr_iter_easy_nophy_res.txt"
 
 def load_params(filename):
     print("loading params from {}".format(filename))

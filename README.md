@@ -1,7 +1,9 @@
 # TetrisBot instructions
 
 ## How to run
-To run, you need a `settings.config` file like in the main directory.
+To run: Just run `python player.py` and it should load in the weights found during our training process.
+
+To train: you need a `settings.config` file like in the main directory.
 
 `settings.config`:
 ```
@@ -15,11 +17,11 @@ num_episodes = 5
 mean = [0, 0, 0, 0, 0, 0]
 p_c = [0, 0, 0, 0, 0, 0]
 p_sigma = [0, 0, 0, 0, 0, 0]
-sigma = 0.1
+sigma = 0.5
 physics = false
 ```
 
-Then you can simply run `train.py` and it will save weights.
+Then you can simply run `train.py` and it will save weights. Although it might be worthwhile to save the run information into a file using `&> [file name]`.
 
 ## Params for running the scripts
 ### Save locations
